@@ -2,15 +2,7 @@ import { Component, OnInit, Inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { DOCUMENT } from '@angular/common';
 
-import { ZoomMtg } from '@zoomus/websdk';
-
-ZoomMtg.setZoomJSLib('https://source.zoom.us/2.2.0/lib', '/av');
-
-ZoomMtg.preLoadWasm();
-ZoomMtg.prepareWebSDK();
-// loads language files, also passes any error messages to the ui
-ZoomMtg.i18n.load('en-US');
-ZoomMtg.i18n.reload('en-US');
+import ZoomMtgEmbedded from '@zoomus/websdk/embedded';
 
 @Component({
   selector: 'app-root',
@@ -20,25 +12,46 @@ ZoomMtg.i18n.reload('en-US');
 export class AppComponent implements OnInit {
 
   // setup your signature endpoint here: https://github.com/zoom/meetingsdk-sample-signature-node.js
-  signatureEndpoint = ''
-  apiKey = ''
-  meetingNumber = '123456789'
+  signatureEndpoint = 'https://contacto-jelpus-zoom.herokuapp.com/'
+  apiKey = 'WpJmaaPiQ66fT95YZF0fFg'
+  meetingNumber = '2881965209'
   role = 0
-  leaveUrl = 'http://localhost:4200'
-  userName = 'Angular'
+  userName = 'Jelpus'
   userEmail = ''
-  passWord = ''
+  passWord = 'jelpus123'
   // pass in the registrant's token if your meeting or webinar requires registration. More info here:
-  // Meetings: https://marketplace.zoom.us/docs/sdk/native-sdks/web/client-view/meetings#join-registered
-  // Webinars: https://marketplace.zoom.us/docs/sdk/native-sdks/web/client-view/webinars#join-registered
+  // Meetings: https://marketplace.zoom.us/docs/sdk/native-sdks/web/component-view/meetings#join-registered
+  // Webinars: https://marketplace.zoom.us/docs/sdk/native-sdks/web/component-view/webinars#join-registered
   registrantToken = ''
+
+  client = ZoomMtgEmbedded.createClient();
 
   constructor(public httpClient: HttpClient, @Inject(DOCUMENT) document) {
 
   }
 
   ngOnInit() {
+    let meetingSDKElement = document.getElementById('meetingSDKElement');
 
+    this.client.init({
+      debug: true,
+      zoomAppRoot: meetingSDKElement,
+      language: 'en-US',
+      customize: {
+        meetingInfo: ['topic', 'host', 'mn', 'pwd', 'telPwd', 'invite', 'participant', 'dc', 'enctype'],
+        toolbar: {
+          buttons: [
+            {
+              text: 'Custom Button',
+              className: 'CustomButton',
+              onClick: () => {
+                console.log('custom button');
+              }
+            }
+          ]
+        }
+      }
+    });
   }
 
   getSignature() {
@@ -59,31 +72,14 @@ export class AppComponent implements OnInit {
 
   startMeeting(signature) {
 
-    document.getElementById('zmmtg-root').style.display = 'block'
-
-    ZoomMtg.init({
-      leaveUrl: this.leaveUrl,
-      success: (success) => {
-        console.log(success)
-        ZoomMtg.join({
-          signature: signature,
-          meetingNumber: this.meetingNumber,
-          userName: this.userName,
-          apiKey: this.apiKey,
-          userEmail: this.userEmail,
-          passWord: this.passWord,
-          tk: this.registrantToken,
-          success: (success) => {
-            console.log(success)
-          },
-          error: (error) => {
-            console.log(error)
-          }
-        })
-      },
-      error: (error) => {
-        console.log(error)
-      }
+    this.client.join({
+    	apiKey: this.apiKey,
+    	signature: signature,
+    	meetingNumber: this.meetingNumber,
+    	password: this.passWord,
+    	userName: this.userName,
+      userEmail: this.userEmail,
+      tk: this.registrantToken
     })
   }
 }
